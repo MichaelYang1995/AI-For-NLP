@@ -8,8 +8,9 @@ def charge_segment(pattern_atom):      #判断是否为'?*X'
 
 def get_reponse(says, rules):
     fail = [True, None]
-
-    def match_var_and_seg(pattern, saying):             #找出与'?*X'或'?X'匹配的saying分词
+    
+    #找出 所有 与'?*X'或'?X'匹配的关键词元组，如：('?*X', '大黄')
+    def match_var_and_seg(pattern, saying):             
         if not saying:
             if pattern:return fail
         if not pattern or not saying:return []
@@ -23,9 +24,10 @@ def get_reponse(says, rules):
             if pattern[0] == saying[0]:
                 return match_var_and_seg(pattern[1:], saying[1:])
             else:
-                return fail
-
-    def segment_match(pattern, saying):                #对'?*X'进行替换，实际给出匹配的语句
+                return fail 
+    
+    #找出 一个 与'?*X'或'?X'匹配的关键词元组，如：('?*X', '大黄')
+    def segment_match(pattern, saying):                
         seg_first, rest = pattern[0], pattern[1:]
         seg_first = seg_first.replace('?*', '?')
 
@@ -35,8 +37,10 @@ def get_reponse(says, rules):
             if rest[0] == token and is_match(rest[1:], saying[(i+1):]):
                 return (seg_first, saying[:i]), i
         return (seg_first, saying), len(saying)
-
-    def is_match(rest, saying):                         #判断'?*X'情况下，是否在当前匹配终止，或者匹配失败。
+    
+    
+    #在寻找一个与'?*X'匹配的关键词元组判断'?*X'情况下，判断给与的匹配模板(pattern)是否正确。
+    def is_match(rest, saying):                        
         if not rest and not saying:
             return True
         if charge_variable(rest[0]) or charge_segment(rest[0]):
@@ -44,9 +48,9 @@ def get_reponse(says, rules):
         if rest[0] != saying[0]:
             return False
         return is_match(rest[1:], saying[1:])
-    # print(segment_match('?*P is very good'.split(), "My dog and my cat is very good".split()))
 
-    def get_match(saying, rules, CN):#搜寻关键词匹配组(defined_patterns)中与saying对应的pattern，并获取与saying中对应的'?*X'或'?X'的匹配元组
+    #搜寻关键词匹配组(defined_patterns)中与saying对应的模板(pattern)，并获取与saying中对应的'?*X'或'?X'的匹配元组
+    def get_match(saying, rules, CN):
         if CN:
             for que_pattern in rules:
                 if not is_Chinese(que_pattern):
@@ -78,7 +82,8 @@ def get_reponse(says, rules):
                 return True
         return False
 
-    def creat_Chinese(pattern):                   #对与saying匹配的模板进行分词，如：['?*X是什么品种的']，['?*X', '是', '什么', '品种']
+    #对saying匹配模板(pattern)的中文分词进行特殊处理，如：['?*X是什么品种的']，['?*X', '是', '什么', '品种']
+    def creat_Chinese(pattern):                   
         generate= jieba.cut(pattern, cut_all=False)
         pattern_list = []
         temp = ""
