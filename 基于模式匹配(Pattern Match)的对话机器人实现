@@ -1,0 +1,115 @@
+import jieba
+
+def charge_variable(pattern_atom):     #判断是否为'?X'
+    return pattern_atom.startswith('?') and all(s.isalpha() for s in pattern_atom[1:])
+def charge_segment(pattern_atom):      #判断是否为'?*X'
+    return pattern_atom.startswith('?*') and all(a.isalpha() for a in pattern_atom[2:])
+
+
+def get_reponse(says, rules):
+    fail = [True, None]
+
+    def match_var_and_seg(pattern, saying):             #找出与'?*X'或'?X'匹配的saying分词
+        if not saying:
+            if pattern:return fail
+        if not pattern or not saying:return []
+
+        if charge_variable(pattern[0]):
+            return [(pattern[0], saying[0])] + match_var_and_seg(pattern[1:], saying[1:])
+        elif charge_segment(pattern[0]):
+            match, index = segment_match(pattern, saying)
+            return [match] + match_var_and_seg(pattern[1:], saying[index:])
+        else:
+            if pattern[0] == saying[0]:
+                return match_var_and_seg(pattern[1:], saying[1:])
+            else:
+                return fail
+
+    def segment_match(pattern, saying):                #对'?*X'进行替换，实际给出匹配的语句
+        seg_first, rest = pattern[0], pattern[1:]
+        seg_first = seg_first.replace('?*', '?')
+
+        if not rest: return (seg_first, saying), len(saying)
+
+        for i, token in enumerate(saying):
+            if rest[0] == token and is_match(rest[1:], saying[(i+1):]):
+                return (seg_first, saying[:i]), i
+        return (seg_first, saying), len(saying)
+
+    def is_match(rest, saying):                         #判断'?*X'情况下，是否在当前匹配终止，或者匹配失败。
+        if not rest and not saying:
+            return True
+        if charge_variable(rest[0]) or charge_segment(rest[0]):
+            return True
+        if rest[0] != saying[0]:
+            return False
+        return is_match(rest[1:], saying[1:])
+    # print(segment_match('?*P is very good'.split(), "My dog and my cat is very good".split()))
+
+    def get_match(saying, rules, CN):#搜寻关键词匹配组(defined_patterns)中与saying对应的pattern，并获取与saying中对应的'?*X'或'?X'的匹配元组
+        if CN:
+            for que_pattern in rules:
+                if not is_Chinese(que_pattern):
+                    continue
+
+                g = match_var_and_seg(creat_Chinese(que_pattern), saying)
+
+                if None not in g:
+                    return g, creat_Chinese(rules[que_pattern][0])
+        else:
+            for que_pattern in rules:
+                g = match_var_and_seg(que_pattern.split(), saying)
+                if None not in g: return g, rules[que_pattern][0].split()
+
+    def change_dictionary(listmap, CN):                  #将获得的'?*X'或'?X'匹配元组(tuble)转换为字典(dictionary)
+        connection = ''
+        if not CN:connection = ' '
+        g = {k: connection.join(v) if isinstance(v, list) else v for k, v in listmap}
+        return g
+
+    def reply(pattern_reply, table):                     #根据传入的'?*X'或'?X'，和与saying匹配的回复样版，返回标准回复
+        if not pattern_reply: return []
+        g = [table.get(pattern_reply[0], pattern_reply[0])] + reply(pattern_reply[1:], table)
+        return g
+
+    def is_Chinese(word):                                #判断句子中是否有中文出现
+        for ch in word:
+            if '\u4e00' <= ch <= '\u9fff':
+                return True
+        return False
+
+    def creat_Chinese(pattern):                   #对与saying匹配的模板进行分词，如：['?*X是什么品种的']，['?*X', '是', '什么', '品种']
+        generate= jieba.cut(pattern, cut_all=False)
+        pattern_list = []
+        temp = ""
+        for i in generate:
+            if is_Chinese(i):
+                if temp != "":
+                    pattern_list.append(temp)
+                    temp = ""
+                pattern_list.append(i)
+            else:
+                temp = temp + i
+        if temp != "": pattern_list.append(temp)
+        return pattern_list
+
+    CN = is_Chinese(says)    #CN为判断是否是中文匹配的依据，是中文返回1，不是中文返回0
+    connection=''            #中文分词连接用''，英文分词连接用空格' '
+    if CN:
+        saying = [i for i in jieba.cut(says, cut_all=False)]        #对says进行中文分词，得到saying
+    else:
+        saying = says.split()                                       #对says进行英文分词，得到saying
+        connection = ' '
+
+    saying_match, reply_pattern = get_match(saying, rules, CN)      #获取与saying对应的 '?*X'匹配关键词元组 和 回复模板
+
+    result = connection.join(reply(reply_pattern, change_dictionary(saying_match, CN)))    #获取最终返回结果
+    return result
+
+defined_patterns = {       
+    "?*X I was a and y ?*Y": ["Hi, how do you do?"],
+    "?*X I was ?*Y": ["Were you really ?X ?", "I already knew you were ?X ."],
+    "?*B是什么品种": ["?B是一条花斑狗"]
+}
+
+print(get_reponse("大黄是什么品种", defined_patterns))
