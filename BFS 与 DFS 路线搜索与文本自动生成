@@ -1,0 +1,85 @@
+
+
+############################## BFS 与DFS 路线搜索##################################
+BEIJING, CHANGCHUN, MULUMUQI, WUHAN, GUNAGHZOU, SHENZHEN, BANGKOK, SHANGHAI, NEWYORK = """
+BEIJING CHANGCHUN MULUMUQI WUHAN GUANGZHOU SHENZHEN BANGKOK SHANGHAI NEWYORK
+""".split()
+
+dictionary = {}
+
+connection  = {
+    CHANGCHUN: [BEIJING],
+    MULUMUQI: [BEIJING],
+    BEIJING: [MULUMUQI, CHANGCHUN, WUHAN, SHENZHEN, NEWYORK],
+    NEWYORK: [BEIJING, SHANGHAI],
+    SHANGHAI: [NEWYORK, WUHAN],
+    WUHAN: [SHANGHAI, BEIJING, GUNAGHZOU],
+    GUNAGHZOU: [WUHAN, BANGKOK],
+    SHENZHEN: [WUHAN, BANGKOK],
+    BANGKOK: [SHENZHEN, GUNAGHZOU]
+}
+connection_2 = {
+    0: [1, 5],
+    1: [0, 2],
+    2: [1, 3],
+    3: [2, 4],
+    4: [3],
+    5: [0, 6],
+    6: [5, 7],
+    7: [6]
+}
+def bfs(start, destination, connection):
+    seen=set()
+    path = [start]
+    while path != []:
+        city_current = path.pop(0)
+        if city_current in seen:
+            continue
+        successor=connection[city_current]
+        path=path+successor
+        print('I stand on {} Looking forward {}'.format(city_current,successor))
+        seen.add(city_current)
+def dfs(start, destination, connection):
+    seen=set()
+    path = [start]
+    while path != []:
+        city_current = path.pop(0)
+        if city_current in seen:
+            continue
+        successor=connection[city_current]
+        path=successor+path
+        print('I stand on {} Looking forward {}'.format(city_current,successor))
+        seen.add(city_current)
+print("dfs")
+dfs(0,7,connection_2)
+print("bfs")
+bfs(0,7,connection_2)
+
+
+#############################文本自动生成##################################
+description = """
+sentence => noun_phrase verb_phrase
+noun_phrase => Article Adj* noun
+Adj* => null | Adj Adj*
+verb_phrase => verb noun_phrase
+Article =>  一个 | 这个
+noun =>   女人 |  篮球 | 桌子 | 小猫
+verb => 看着   |  坐在 |  听着 | 看见
+Adj =>   蓝色的 |  好看的 | 小小的
+"""
+def parse_grammar(description,sep=' => '):
+    grammar={}
+
+    for line in description.split('\n'):
+        line=line.strip()
+        if not line: continue
+        lhs, rhs = line.split(sep)
+
+        alternatives = rhs.split('|')
+        grammar[lhs] = [i.split(' ') for i in alternatives]
+    return grammar
+
+
+g = parse_grammar(description)
+
+print(g)
