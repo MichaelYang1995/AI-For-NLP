@@ -9,6 +9,8 @@ def charge_segment(pattern_atom):      #判断是否为'?*X'
 def get_reponse(says, rules):
     fail = [True, None]
     
+    ########################################### 函数设定 ########################################
+    
     #找出 所有 与'?*X'或'?X'匹配的关键词元组，如：('?*X', '大黄')
     def match_var_and_seg(pattern, saying):             
         if not saying:
@@ -97,7 +99,9 @@ def get_reponse(says, rules):
                 temp = temp + i
         if temp != "": pattern_list.append(temp)
         return pattern_list
-
+        
+    ########################################### 程序运行 #########################################
+    
     CN = is_Chinese(says)    #CN为判断是否是中文匹配的依据，是中文返回1，不是中文返回0
     connection=''            #中文分词连接用''，英文分词连接用空格' '
     if CN:
